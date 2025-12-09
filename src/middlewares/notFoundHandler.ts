@@ -1,7 +1,9 @@
-import type { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 
-const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
-  res.status(404).json({ message: "Not Found" });
+const notFoundHandler = (req: Request, res: Response): void => {
+  res.status(404).json({
+    message: `${req.url} not found`,
+  });
 };
 
 export default notFoundHandler;

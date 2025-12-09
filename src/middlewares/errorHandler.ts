@@ -1,14 +1,12 @@
-import type { Request, Response, NextFunction } from "express";
-import type { ResponseError } from "../types/interface.js";
+import { Request, Response, NextFunction } from "express";
 
 const errorHandler = (
-  error: ResponseError,
-  req: Request,
+  error: { status?: number; message: string },
+  _req: Request,
   res: Response,
-  next: NextFunction,
-) => {
-  const status = error.status ?? 500;
-  const message = error.message ?? "Server error";
+  _next: NextFunction
+): void => {
+  const { status = 500, message } = error;
 
   res.status(status).json({ message });
 };

@@ -1,0 +1,29 @@
+import formData from "form-data";
+import Mailgun from "mailgun.js";
+import "dotenv/config";
+
+const { MAILGUN_API_KEY, MAILGUN_DOMAIN } = process.env;
+
+// Проверяем, что переменные окружения установлены
+if (!MAILGUN_API_KEY) throw new Error("MAILGUN_API_KEY is not defined in .env");
+if (!MAILGUN_DOMAIN) throw new Error("MAILGUN_DOMAIN is not defined in .env");
+
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({ username: "api", key: MAILGUN_API_KEY });
+
+interface IEmailData {
+  to: string[];
+  subject: string;
+  text?: string;
+  html: string;
+}
+
+const sendEmailWithMailgun = async (data: IEmailData) => {
+  const email = {
+    ...data,
+    from: `Excited User <mailgun@${MAILGUN_DOMAIN}>`,
+  };
+  return mg.messages.create(MAILGUN_DOMAIN, email);
+};
+
+export default sendEmailWithMailgun;

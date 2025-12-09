@@ -1,9 +1,5 @@
 node_modules/
-
 .env
-
-.vscode
 .idea
-.DS_Store
-
-dist/
+vscode/
+.moc

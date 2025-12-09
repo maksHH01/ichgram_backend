@@ -1,21 +1,19 @@
 import mongoose from "mongoose";
 
-const { MONGODB_URI } = process.env;
+const { DATABASE_URI } = process.env;
 
-if (!MONGODB_URI) {
-  throw new Error("MONGODB_URI is not defined in environment variables");
-}
-
-const connectDatabase = async () => {
+const connectDatabase = async (): Promise<void> => {
   try {
-    await mongoose.connect(MONGODB_URI);
-    console.log("Database connected successfully");
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error(`Database connection error: ${error.message}`);
-      throw error;
+    if (!DATABASE_URI) {
+      throw new Error("DATABASE_URI is not defined in environment variables");
     }
-    console.error(`Unknown error: ${error}`);
+
+    await mongoose.connect(DATABASE_URI);
+    console.log("Successfully connected to database");
+  } catch (error) {
+    console.error("Error connecting to database");
+    console.error(error);
+    throw error;
   }
 };
 

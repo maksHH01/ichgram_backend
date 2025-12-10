@@ -4,7 +4,6 @@ import "dotenv/config";
 
 const { MAILGUN_API_KEY, MAILGUN_DOMAIN } = process.env;
 
-// Проверяем, что переменные окружения установлены
 if (!MAILGUN_API_KEY) throw new Error("MAILGUN_API_KEY is not defined in .env");
 if (!MAILGUN_DOMAIN) throw new Error("MAILGUN_DOMAIN is not defined in .env");
 

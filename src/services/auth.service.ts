@@ -5,8 +5,8 @@ import User, { IUser } from "../db/User";
 import HttpExeption from "../utils/HttpExeption";
 
 import { Login } from "../validation/auth.schema";
-import { toUserDto } from "../typescript/toUserDto";
-import { IUserDto } from "../typescript/interfaces";
+import { toUserDto } from "../types/toUserDto";
+import { IUserDto } from "../types/interfaces";
 
 const { JWT_SECRET = "devsecret" } = process.env;
 

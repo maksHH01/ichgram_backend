@@ -1,58 +1,56 @@
-import * as Yup from "yup";
+import { z } from "zod";
 
 import {
   emailValidation,
   passwordValidation,
 } from "../constants/users.constants";
 
-export const passwordSchema = Yup.string()
+export const passwordSchema = z
+  .string()
   .trim()
-  .min(6)
-  .matches(passwordValidation.value, passwordValidation.message)
-  .required();
+  .min(6, "Password must be at least 6 characters")
+  .regex(passwordValidation.value, passwordValidation.message);
 
-export type PasswordSchema = Yup.InferType<typeof passwordSchema>;
+export type PasswordSchema = z.infer<typeof passwordSchema>;
 
-export const resetPasswordSchema = Yup.object().shape({
-  verificationCode: Yup.string().required("Verification code is required"),
-  newPassword: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("New password is required"),
-});
-
-export const emailSchema = Yup.string()
+export const emailSchema = z
+  .string()
   .trim()
-  .matches(emailValidation.value, emailValidation.message)
-  .required();
+  .regex(emailValidation.value, emailValidation.message);
 
-export type EmailSchema = Yup.InferType<typeof emailSchema>;
+export type EmailSchema = z.infer<typeof emailSchema>;
 
-export const usernameSchema = Yup.string()
+export const usernameSchema = z
+  .string()
   .trim()
   .min(3, "Username must be at least 3 characters")
   .max(30, "Username must be at most 30 characters")
-  .matches(
+  .regex(
     /^[a-zA-Z0-9_]+$/,
-    "Username can only contain letters, numbers and underscores"
+    "Username can only contain letters, numbers and underscores",
   );
 
-//проверка данных пользователя
-export const userAddSchema = Yup.object({
-  fullname: Yup.string().trim().required(),
+export const resetPasswordSchema = z.object({
+  verificationCode: z.string().min(1, "Verification code is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const userAddSchema = z.object({
+  fullname: z.string().trim().min(1, "Fullname is required"),
   username: usernameSchema,
   email: emailSchema,
   password: passwordSchema,
 });
 
-export type UserAddSchema = Yup.InferType<typeof userAddSchema>;
+export type UserAddSchema = z.infer<typeof userAddSchema>;
 
-export const verifyCodeSchema = Yup.object({
-  code: Yup.string().trim().required(),
+export const verifyCodeSchema = z.object({
+  code: z.string().trim().min(1, "Code is required"),
 });
 
-export const changePasswordSchema = Yup.object({
+export const changePasswordSchema = z.object({
   oldPassword: passwordSchema,
   newPassword: passwordSchema,
 });
 
-export type ChangePasswordSchema = Yup.InferType<typeof changePasswordSchema>;
+export type ChangePasswordSchema = z.infer<typeof changePasswordSchema>;

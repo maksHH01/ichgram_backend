@@ -6,7 +6,7 @@ import validateBody from "../utils/validateBody";
 
 import { loginSchema } from "../validation/auth.schema";
 
-import { AuthenticatedRequest } from "../typescript/interfaces";
+import { AuthenticatedRequest } from "../types/interfaces";
 import { ILoginResponse } from "../services/auth.service";
 
 export const loginController = async (

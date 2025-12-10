@@ -1,21 +1,21 @@
-import * as Yup from "yup";
+import { z } from "zod";
 
 import { passwordSchema, emailSchema, usernameSchema } from "./users.schema";
 
-export const loginSchema = Yup.object({
-  identifier: Yup.string()
-    .required("Identifier is required")
-    .test(
-      "is-email-or-username",
-      "Must be a valid email or username",
+export const loginSchema = z.object({
+  identifier: z
+    .string()
+    .min(1, "Identifier is required")
+    .refine(
       (value) => {
-        if (!value) return false;
         return (
-          emailSchema.isValidSync(value) || usernameSchema.isValidSync(value)
+          emailSchema.safeParse(value).success ||
+          usernameSchema.safeParse(value).success
         );
-      }
+      },
+      { message: "Must be a valid email or username" },
     ),
   password: passwordSchema,
 });
 
-export type Login = Yup.InferType<typeof loginSchema>;
+export type Login = z.infer<typeof loginSchema>;

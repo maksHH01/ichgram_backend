@@ -8,7 +8,7 @@ import {
   resetPasswordSchema,
 } from "../validation/users.schema";
 
-import { AuthenticatedRequest } from "../typescript/interfaces";
+import { AuthenticatedRequest } from "../types/interfaces";
 
 export const registerUserController = async (
   req: Request,

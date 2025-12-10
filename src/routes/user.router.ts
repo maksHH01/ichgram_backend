@@ -38,7 +38,7 @@ userRouter.patch(
   "/me",
   authenticate,
   upload.single("avatar"),
-  updateUserProfileController
+  updateUserProfileController,
 );
 
 userRouter.post("/:id/follow", authenticate, followUserController);

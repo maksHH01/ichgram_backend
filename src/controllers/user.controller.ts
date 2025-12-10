@@ -12,7 +12,7 @@ import { AuthenticatedRequest } from "../typescript/interfaces";
 
 export const registerUserController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   await validateBody(userAddSchema, req.body);
   await usersService.registerUser((req as AuthenticatedRequest).body);
@@ -97,7 +97,7 @@ export const getUserByIdController = async (req: Request, res: Response) => {
 
 export const updateUserProfileController = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const { fullname, bio, link } = req.body;
@@ -114,10 +114,10 @@ export const updateUserProfileController = async (
     if (avatarUrl) {
       updatedFields.avatarUrl = avatarUrl;
     }
-    const user = await usersService.updateUserProfile(
-      req.user.id,
-      updatedFields
-    );
+
+    const userId = (req as AuthenticatedRequest).user._id;
+
+    const user = await usersService.updateUserProfile(userId, updatedFields);
 
     res.json(user);
   } catch (err) {
@@ -129,7 +129,7 @@ export const updateUserProfileController = async (
 export const changePasswordController = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { identifier, email, username } = req.body;
   const value = identifier || email || username;
@@ -147,7 +147,7 @@ export const changePasswordController = async (
 export const resetPasswordController = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     await validateBody(resetPasswordSchema, req.body);
@@ -181,11 +181,17 @@ export const searchUserController = async (req: Request, res: Response) => {
 export const followUserController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const currentUserId = req.user._id;
+    const currentUserId = (req as AuthenticatedRequest).user._id;
+
+    console.log("--- FOLLOW REQUEST ---");
+    console.log("Target User ID (из URL):", id);
+    console.log("Current User ID (из токена):", currentUserId);
+
     await usersService.followUser(id, currentUserId);
 
     res.status(200).json({ message: "Подписка оформлена" });
   } catch (error: any) {
+    console.error("Ошибка в followUserController:", error.message);
     const status = error.message === "Нельзя подписаться на себя" ? 400 : 404;
     res.status(status).json({ message: error.message });
   }
@@ -194,12 +200,17 @@ export const followUserController = async (req: Request, res: Response) => {
 export const unfollowUserController = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const currentUserId = req.user._id;
+
+    const currentUserId = (req as AuthenticatedRequest).user._id;
 
     await usersService.unfollowUser(id, currentUserId);
 
+    console.log("✅ Отписка прошла успешно");
     res.status(200).json({ message: "Отписка выполнена" });
   } catch (error: any) {
-    res.status(404).json({ message: error.message });
+    res.status(500).json({
+      message: error.message || "Server Error",
+      stack: error.stack,
+    });
   }
 };

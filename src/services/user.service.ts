@@ -56,7 +56,7 @@ export const checkEmailExists = async (email: string): Promise<boolean> => {
 };
 
 export const checkUsernameExists = async (
-  username: string
+  username: string,
 ): Promise<boolean> => {
   const user = await User.findOne({ username });
   return !!user;
@@ -85,7 +85,7 @@ export const verify = async (code: string) => {
 };
 
 export const sendPasswordResetLink = async (
-  identifier: string
+  identifier: string,
 ): Promise<void> => {
   if (!identifier) {
     throw HttpExeption(400, "Email или username обязателен");
@@ -125,7 +125,7 @@ export const sendPasswordResetLink = async (
 
 export const resetPasswordByCode = async (
   verificationCode: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<void> => {
   const user = await User.findOne({ verificationCode });
 
@@ -162,7 +162,7 @@ export const updateUserProfile = async (
     username: string;
     bio: string;
     avatar: string;
-  }>
+  }>,
 ) => {
   return await User.findByIdAndUpdate(userId, updateData, {
     new: true,
@@ -181,7 +181,7 @@ export const searchUsers = async (query: string) => {
 
 export const followUser = async (
   targetUserId: string,
-  currentUserId: string
+  currentUserId: string,
 ) => {
   if (targetUserId === currentUserId) {
     throw new Error("Нельзя подписаться на себя");
@@ -218,24 +218,33 @@ export const followUser = async (
 
 export const unfollowUser = async (
   targetUserId: string,
-  currentUserId: string
+  currentUserId: string,
 ) => {
-  const user = await User.findById(targetUserId);
   const currentUser = await User.findById(currentUserId);
 
-  if (!user || !currentUser) {
-    throw new Error("Пользователь не найден");
+  if (!currentUser) {
+    throw new Error(`Current user with ID ${currentUserId} not found in DB`);
   }
 
-  user.followers = user.followers.filter(
-    (followerId) => followerId.toString() !== currentUserId.toString()
-  );
+  const initialFollowingCount = currentUser.following.length;
 
   currentUser.following = currentUser.following.filter(
-    (followingId) => followingId.toString() !== targetUserId.toString()
+    (followingId) => followingId.toString() !== targetUserId,
   );
 
-  await Promise.all([user.save(), currentUser.save()]);
+  await currentUser.save();
 
-  return user;
+  const targetUser = await User.findById(targetUserId);
+
+  if (targetUser) {
+    targetUser.followers = targetUser.followers.filter(
+      (followerId) => followerId.toString() !== currentUserId.toString(),
+    );
+
+    await targetUser.save();
+  } else {
+    console.warn(
+      `[SERVICE]  Целевой пользователь ${targetUserId} не найден, но у себя мы подписку удалили.`,
+    );
+  }
 };

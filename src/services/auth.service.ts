@@ -1,10 +1,9 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-import User from "../db/User";
+import User, { IUser } from "../db/User";
 import HttpExeption from "../utils/HttpExeption";
 
-import { IUser } from "../db/User";
 import { Login } from "../validation/auth.schema";
 import { toUserDto } from "../typescript/toUserDto";
 import { IUserDto } from "../typescript/interfaces";
@@ -22,7 +21,7 @@ export interface IJWTTokenPayload {
 
 const createToken = (user: IUser): string => {
   const payload: IJWTTokenPayload = {
-    id: user.id.toString(),
+    id: user._id.toString(),
   };
 
   const token = jwt.sign(payload, JWT_SECRET, {
@@ -55,8 +54,10 @@ export const login = async ({
   }
 
   const token = createToken(user);
+
   user.token = token;
-  await user.save();
+
+  await user.save({ validateBeforeSave: false });
 
   return {
     token,
@@ -71,13 +72,10 @@ export const getCurrent = async (user: IUser): Promise<ILoginResponse> => {
   };
 };
 
-export const logout = async ({ _id }: IUser): Promise<void> => {
-  const user = (await User.findById(_id)) as IUser | null;
-
-  if (!user) {
-    throw HttpExeption(401, `User not found`);
+export const logout = async (user: IUser): Promise<void> => {
+  if (!user || !user._id) {
+    return;
   }
 
-  user.token = "";
-  await user.save();
+  await User.findByIdAndUpdate(user._id, { token: "" });
 };

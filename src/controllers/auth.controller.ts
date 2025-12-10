@@ -11,11 +11,11 @@ import { ILoginResponse } from "../services/auth.service";
 
 export const loginController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   await validateBody(loginSchema, req.body);
   const result: ILoginResponse = await authService.login(
-    (req as AuthenticatedRequest).body
+    (req as AuthenticatedRequest).body,
   );
 
   res.json(result);
@@ -23,10 +23,10 @@ export const loginController = async (
 
 export const getCurrentController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   const result: ILoginResponse = await authService.getCurrent(
-    (req as AuthenticatedRequest).user
+    (req as AuthenticatedRequest).user,
   );
 
   res.json(result);
@@ -34,9 +34,13 @@ export const getCurrentController = async (
 
 export const logoutController = async (
   req: Request,
-  res: Response
+  res: Response,
 ): Promise<void> => {
-  await authService.logout((req as AuthenticatedRequest).user);
+  const user = (req as AuthenticatedRequest).user;
+
+  if (user) {
+    await authService.logout(user);
+  }
 
   res.json({
     message: "Logout successfully",

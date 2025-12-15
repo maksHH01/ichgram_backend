@@ -19,20 +19,19 @@ import { upload } from "../middlewares/uploadMiddleware";
 
 const userRouter = Router();
 
-userRouter.post("/register", registerUserController);
 
+userRouter.post("/register", registerUserController);
 userRouter.post("/check-email", checkEmailController);
 userRouter.post("/check-username", checkUsernameController);
-
 userRouter.post("/verify", verifyController);
-
 userRouter.post("/forgot-password", changePasswordController);
 userRouter.post("/reset-password", resetPasswordController);
 
+
 userRouter.get("/search", searchUserController);
+userRouter.get("/by-id/:id", getUserByIdController);
 
 userRouter.get("/:username", getUserProfileController);
-userRouter.get("/by-id/:id", getUserByIdController);
 
 userRouter.patch(
   "/me",

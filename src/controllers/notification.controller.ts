@@ -1,25 +1,41 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import * as notificationsService from "../services/notification.service";
+import { AuthenticatedRequest } from "../types/interfaces";
 import { Types } from "mongoose";
 
-export const getNotifications = async (req: Request, res: Response) => {
-  const userId = new Types.ObjectId(req.user._id);
+export const getNotifications = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
+    const currentUser = (req as AuthenticatedRequest).user;
+
+    const userId = new Types.ObjectId(currentUser._id.toString());
+
     const notifications = await notificationsService.getUserNotifications(
-      userId
+      userId,
     );
+
     res.json(notifications);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch notifications" });
+    next(err);
   }
 };
 
-export const markAllAsRead = async (req: Request, res: Response) => {
-  const userId = new Types.ObjectId(req.user._id);
+export const markAllAsRead = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
+    const currentUser = (req as AuthenticatedRequest).user;
+    const userId = new Types.ObjectId(currentUser._id.toString());
+
     await notificationsService.markAsRead(userId);
+
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to mark notifications as read" });
+    next(err);
   }
 };

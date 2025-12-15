@@ -1,16 +1,10 @@
+import { ZodType } from "zod"; 
 import { IHttpError } from "../types/interfaces";
 
-interface SchemaBasic<K> {
-  validate: (value: K) => void;
-}
-
-const validateBody = async <T extends SchemaBasic<K>, K>(
-  schema: T,
-  body: K,
-): Promise<boolean> => {
+const validateBody = async (schema: ZodType, body: any): Promise<void> => {
   try {
-    await schema.validate(body);
-    return true;
+
+    await schema.parseAsync(body);
   } catch (error) {
     if (error instanceof Error) {
       (error as IHttpError).status = 400;

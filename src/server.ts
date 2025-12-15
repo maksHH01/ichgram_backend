@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import http from "node:http";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
+import { ChangeStreamDocument } from "mongodb";
 
 import notFoundHandler from "./middlewares/notFoundHandler";
 import errorHandler from "./middlewares/errorHandler";
@@ -17,18 +18,20 @@ import Notification from "./db/Notification";
 
 const startServer = () => {
   const app = express();
+  const PORT = process.env.PORT || 3000;
+  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
   app.use(
     cors({
-      origin: process.env.FRONTEND_URL,
+      origin: FRONTEND_URL,
       credentials: true,
-    })
+    }),
   );
 
   app.use(express.json());
   app.use(
     "/uploads",
-    express.static(path.join(__dirname, "../public/uploads"))
+    express.static(path.join(__dirname, "../public/uploads")),
   );
 
   app.use("/api/users", userRouter);
@@ -44,43 +47,54 @@ const startServer = () => {
 
   const io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL,
+      origin: FRONTEND_URL,
       credentials: true,
     },
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
   });
 
-  io.on("connection", (socket) => {
-    console.log("New frontend connected, socket id:", socket.id);
+  io.on("connection", (socket: Socket) => {
+    console.log(`New frontend connected, socket id: ${socket.id}`);
 
     socket.on("join", (userId: string) => {
-      socket.join(userId);
-      console.log(`Socket ${socket.id} joined room ${userId}`);
+      if (userId && typeof userId === "string") {
+        socket.join(userId);
+        console.log(`Socket ${socket.id} joined room ${userId}`);
+      } else {
+        console.warn(`Socket ${socket.id} tried to join with invalid userId`);
+      }
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected, socket id:", socket.id);
+      console.log(`User disconnected, socket id: ${socket.id}`);
     });
   });
 
-  Notification.watch().on("change", async (change) => {
-    if (change.operationType === "insert") {
-      const notification = await Notification.findById(change.fullDocument._id)
-        .populate("sender", "username avatarUrl")
-        .populate("post", "imageUrl")
-        .lean();
+  Notification.watch().on("change", async (change: ChangeStreamDocument) => {
+    if (change.operationType === "insert" && change.fullDocument) {
+      try {
+        const notificationId = change.fullDocument._id;
 
-      if (notification) {
-        io.to(notification.recipient.toString()).emit(
-          "newNotification",
-          notification
-        );
+        const notification = await Notification.findById(notificationId)
+          .populate("sender", "username avatarUrl")
+          .populate("post", "imageUrl")
+          .lean();
+
+        if (notification && notification.recipient) {
+          io.to(notification.recipient.toString()).emit(
+            "newNotification",
+            notification,
+          );
+        }
+      } catch (err) {
+        console.error("Error processing notification change:", err);
       }
     }
   });
 
-  const port = process.env.PORT || 3000;
-  server.listen(port, () => console.log(`Server running on ${port} port`));
+  server.listen(PORT, () => {
+    console.log(`Server (API + WebSockets) running on port ${PORT}`);
+  });
 };
 
 export default startServer;

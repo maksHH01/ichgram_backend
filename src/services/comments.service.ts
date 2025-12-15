@@ -1,6 +1,7 @@
 import Post from "../db/Post";
 import Comment, { IComment } from "../db/Comment";
 import { Types } from "mongoose";
+import HttpExeption from "../utils/HttpExeption";
 
 export const getCommentsByPost = async (postId: string) => {
   const post = await Post.findById(postId).populate({
@@ -9,7 +10,9 @@ export const getCommentsByPost = async (postId: string) => {
     options: { sort: { createdAt: 1 } },
   });
 
-  if (!post) throw new Error("Post not found");
+  if (!post) {
+    throw HttpExeption(404, "Post not found");
+  }
 
   return post.comments;
 };
@@ -17,14 +20,20 @@ export const getCommentsByPost = async (postId: string) => {
 export const deleteComment = async (
   postId: string,
   commentId: string,
-  userId: string
+  userId: string,
 ) => {
-  const userObjId = new Types.ObjectId(userId);
-
   const comment = await Comment.findById(commentId);
-  if (!comment) throw new Error("Comment not found");
-  if (comment.author.toString() !== userObjId.toString())
-    throw new Error("Unauthorized");
+
+  if (!comment) {
+    throw HttpExeption(404, "Comment not found");
+  }
+
+  if (comment.author.toString() !== userId) {
+    throw HttpExeption(
+      403,
+      "You do not have permission to delete this comment",
+    );
+  }
 
   await comment.deleteOne();
 
@@ -35,30 +44,38 @@ export const deleteComment = async (
 
 export const likeComment = async (
   commentId: string,
-  userId: string
-): Promise<IComment | null> => {
+  userId: string,
+): Promise<IComment> => {
   const userObjId = new Types.ObjectId(userId);
 
   const comment = await Comment.findByIdAndUpdate(
     commentId,
     { $addToSet: { likes: userObjId } },
-    { new: true }
+    { new: true },
   ).populate("author", "username avatarUrl");
+
+  if (!comment) {
+    throw HttpExeption(404, "Comment not found");
+  }
 
   return comment;
 };
 
 export const unlikeComment = async (
   commentId: string,
-  userId: string
-): Promise<IComment | null> => {
+  userId: string,
+): Promise<IComment> => {
   const userObjId = new Types.ObjectId(userId);
 
   const comment = await Comment.findByIdAndUpdate(
     commentId,
     { $pull: { likes: userObjId } },
-    { new: true }
+    { new: true },
   ).populate("author", "username avatarUrl");
+
+  if (!comment) {
+    throw HttpExeption(404, "Comment not found");
+  }
 
   return comment;
 };

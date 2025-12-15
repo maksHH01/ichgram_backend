@@ -14,19 +14,15 @@ commentsRouter.get("/:postId", getCommentsByPostController);
 commentsRouter.delete(
   "/:postId/:commentId",
   authenticate,
-  deleteCommentController
+  deleteCommentController,
 );
 
-commentsRouter.post(
-  "/posts/:postId/comments/:commentId/like",
-  authenticate,
-  likeCommentController
-);
+commentsRouter.post("/:commentId/like", authenticate, likeCommentController);
 
 commentsRouter.post(
-  "/posts/:postId/comments/:commentId/unlike",
+  "/:commentId/unlike",
   authenticate,
-  unlikeCommentController
+  unlikeCommentController,
 );
 
 export default commentsRouter;

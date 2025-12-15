@@ -1,11 +1,12 @@
 import Post, { IPost } from "../db/Post";
 import User from "../db/User";
-import Comment, { IComment } from "../db/Comment";
+import Comment from "../db/Comment";
 import { Types } from "mongoose";
 import { createNotification } from "./notification.service";
+import HttpExeption from "../utils/HttpExeption";
 
 interface CreatePostInput {
-  authorId: Types.ObjectId;
+  authorId: string;
   imageUrl: string;
   caption?: string;
 }
@@ -19,7 +20,7 @@ export const createPostService = async ({
   caption = "",
 }: CreatePostInput): Promise<IPost> => {
   return await Post.create({
-    author: authorId,
+    author: new Types.ObjectId(authorId),
     imageUrl,
     caption,
     likes: [],
@@ -61,7 +62,7 @@ export const getExplorePostsService = async () => {
 
 export const likePost = async (postId: string, userId: string) => {
   const post = await Post.findById(postId);
-  if (!post) throw new Error("Пост не найден");
+  if (!post) throw HttpExeption(404, "Пост не найден");
 
   const userIdObj = toObjectId(userId);
   const userIdStr = userIdObj.toString();
@@ -89,7 +90,7 @@ export const likePost = async (postId: string, userId: string) => {
 
 export const unlikePost = async (postId: string, userId: string) => {
   const post = await Post.findById(postId);
-  if (!post) throw new Error("Пост не найден");
+  if (!post) throw HttpExeption(404, "Пост не найден");
 
   const userIdStr = userId.toString();
   post.likes = post.likes.filter((id) => id.toString() !== userIdStr);
@@ -99,7 +100,7 @@ export const unlikePost = async (postId: string, userId: string) => {
 
 export const likeComment = async (commentId: string, userId: string) => {
   const comment = await Comment.findById(commentId);
-  if (!comment) throw new Error("Комментарий не найден");
+  if (!comment) throw HttpExeption(404, "Комментарий не найден");
 
   const userIdObj = toObjectId(userId);
   const userIdStr = userIdObj.toString();
@@ -111,7 +112,7 @@ export const likeComment = async (commentId: string, userId: string) => {
     if (comment.author.toString() !== userIdStr) {
       try {
         const post = await Post.findOne({ comments: comment._id }).select(
-          "_id"
+          "_id",
         );
         if (post) {
           await createNotification({
@@ -132,10 +133,10 @@ export const likeComment = async (commentId: string, userId: string) => {
 
 export const unlikeComment = async (commentId: string, userId: string) => {
   const comment = await Comment.findById(commentId);
-  if (!comment) throw new Error("Комментарий не найден");
+  if (!comment) throw HttpExeption(404, "Комментарий не найден");
 
   comment.likes = comment.likes.filter(
-    (id) => id.toString() !== userId.toString()
+    (id) => id.toString() !== userId.toString(),
   );
   await comment.save();
   return comment.likes.length;
@@ -144,7 +145,7 @@ export const unlikeComment = async (commentId: string, userId: string) => {
 export const createComment = async (
   postId: string,
   authorId: string,
-  text: string
+  text: string,
 ) => {
   const authorObjId = toObjectId(authorId);
 
@@ -156,9 +157,11 @@ export const createComment = async (
   await comment.save();
 
   const post = await Post.findById(postId);
+  if (!post) throw HttpExeption(404, "Post not found");
+
   await Post.findByIdAndUpdate(postId, { $push: { comments: comment._id } });
 
-  if (post && post.author.toString() !== authorId) {
+  if (post.author.toString() !== authorId) {
     try {
       await createNotification({
         recipient: toObjectId(post.author),
@@ -173,7 +176,7 @@ export const createComment = async (
 
   return await Comment.findById(comment._id).populate(
     "author",
-    "username avatarUrl"
+    "username avatarUrl",
   );
 };
 
@@ -189,7 +192,7 @@ export const deletePost = async (postId: string, userId: string) => {
 export const editPost = async (
   postId: string,
   newCaption: string,
-  userId: string
+  userId: string,
 ) => {
   const post = await Post.findById(postId);
   if (!post || post.author.toString() !== userId.toString()) return null;

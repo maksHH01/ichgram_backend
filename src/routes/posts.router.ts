@@ -4,14 +4,12 @@ import {
   createPost,
   getUserPosts,
   getPostByIdController,
-    likeCommentController,
-    unlikeCommentController,
   likePostController,
   unlikePostController,
   deletePostController,
   editPostController,
   getFeedPostsController,
-  createCommentController
+  createCommentController,
 } from "../controllers/posts.controller";
 import { authenticate } from "../middlewares/authorization";
 import { upload } from "../middlewares/uploadMiddleware";
@@ -19,7 +17,6 @@ import { upload } from "../middlewares/uploadMiddleware";
 const postsRouter = express.Router();
 
 postsRouter.get("/dashboard", authenticate, getFeedPostsController);
-
 postsRouter.get("/explore", getExplorePosts);
 
 postsRouter.get("/:username/posts", getUserPosts);
@@ -29,25 +26,15 @@ postsRouter.post(
   "/create-new-post",
   authenticate,
   upload.single("image"),
-  createPost
+  createPost,
 );
 
 postsRouter.post("/:postId/like", authenticate, likePostController);
 postsRouter.post("/:postId/unlike", authenticate, unlikePostController);
-postsRouter.post(
-  "/:postId/comments/:commentId/like",
-  authenticate,
-  likeCommentController
-);
-postsRouter.post(
-  "/:postId/comments/:commentId/unlike",
-  authenticate,
-  unlikeCommentController
-);
-
-postsRouter.post("/:postId/comments", authenticate, createCommentController);
 
 postsRouter.delete("/:postId", authenticate, deletePostController);
 postsRouter.put("/:postId/edit", authenticate, editPostController);
+
+postsRouter.post("/:postId/comments", authenticate, createCommentController);
 
 export default postsRouter;

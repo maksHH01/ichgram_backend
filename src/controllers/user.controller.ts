@@ -13,57 +13,81 @@ import { AuthenticatedRequest } from "../types/interfaces";
 export const registerUserController = async (
   req: Request,
   res: Response,
+  next: NextFunction
 ): Promise<void> => {
-  await validateBody(userAddSchema, req.body);
-  await usersService.registerUser((req as AuthenticatedRequest).body);
+  try {
+    await validateBody(userAddSchema, req.body);
 
-  res.status(201).json({
-    message: "User succeffully register. Please confirm email with link",
-  });
+    await usersService.registerUser(req.body);
+
+    res.status(201).json({
+      message: "User succeffully register. Please confirm email with link",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const checkEmailController = async (req: Request, res: Response) => {
-  const { email } = req.body;
-
-  if (!email || typeof email !== "string") {
-    return res.status(400).json({ message: "Email is required" });
-  }
-
+export const checkEmailController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
+    const { email } = req.body;
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
     const exists = await usersService.checkEmailExists(email);
     res.json({ exists });
   } catch (error) {
-    console.error("Ошибка при проверке email:", error);
-    res.status(500).json({ message: "Internal server error" });
+    next(error);
   }
 };
 
-export const checkUsernameController = async (req: Request, res: Response) => {
-  const { username } = req.body;
-
-  if (!username || typeof username !== "string") {
-    return res.status(400).json({ message: "Username is required" });
-  }
-
+export const checkUsernameController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
+    const { username } = req.body;
+
+    if (!username || typeof username !== "string") {
+      return res.status(400).json({ message: "Username is required" });
+    }
+
     const exists = await usersService.checkUsernameExists(username);
     res.json({ exists });
   } catch (error) {
-    console.error("Ошибка при проверке username:", error);
-    res.status(500).json({ message: "Internal server error" });
+    next(error);
   }
 };
 
-export const verifyController = async (req: Request, res: Response) => {
-  await validateBody(verifyCodeSchema, req.body);
-  await usersService.verify(req.body.code);
+export const verifyController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    await validateBody(verifyCodeSchema, req.body);
+    await usersService.verify(req.body.code);
 
-  res.status(200).json({
-    message: "User successfully verified",
-  });
+    res.status(200).json({
+      message: "User successfully verified",
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getUserProfileController = async (req: Request, res: Response) => {
+export const getUserProfileController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const username = req.params.username;
     const user = await usersService.getUserProfileService(username);
@@ -74,12 +98,15 @@ export const getUserProfileController = async (req: Request, res: Response) => {
 
     return res.json(user);
   } catch (error) {
-    console.error("Ошибка при получении профиля:", error);
-    return res.status(500).json({ message: "Ошибка сервера" });
+    next(error);
   }
 };
 
-export const getUserByIdController = async (req: Request, res: Response) => {
+export const getUserByIdController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const userId = req.params.id;
     const user = await usersService.getUserByIdService(userId);
@@ -90,14 +117,14 @@ export const getUserByIdController = async (req: Request, res: Response) => {
 
     res.json(user);
   } catch (error) {
-    console.error("Ошибка при получении пользователя по ID:", error);
-    res.status(500).json({ message: "Ошибка сервера" });
+    next(error);
   }
 };
 
 export const updateUserProfileController = async (
   req: Request,
   res: Response,
+  next: NextFunction
 ) => {
   try {
     const { fullname, bio, link } = req.body;
@@ -115,26 +142,26 @@ export const updateUserProfileController = async (
       updatedFields.avatarUrl = avatarUrl;
     }
 
-    const userId = (req as AuthenticatedRequest).user._id;
+
+    const userId = (req as AuthenticatedRequest).user._id.toString();
 
     const user = await usersService.updateUserProfile(userId, updatedFields);
 
     res.json(user);
-  } catch (err) {
-    console.error("Ошибка при обновлении профиля:", err);
-    res.status(500).json({ message: "Ошибка при обновлении профиля" });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const changePasswordController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
-  const { identifier, email, username } = req.body;
-  const value = identifier || email || username;
-
   try {
+    const { identifier, email, username } = req.body;
+    const value = identifier || email || username;
+
     await usersService.sendPasswordResetLink(value);
     res
       .status(200)
@@ -147,7 +174,7 @@ export const changePasswordController = async (
 export const resetPasswordController = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     await validateBody(resetPasswordSchema, req.body);
@@ -161,7 +188,11 @@ export const resetPasswordController = async (
   }
 };
 
-export const searchUserController = async (req: Request, res: Response) => {
+export const searchUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { q } = req.query;
 
@@ -173,44 +204,40 @@ export const searchUserController = async (req: Request, res: Response) => {
 
     res.json(users);
   } catch (error) {
-    console.error("Search error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    next(error);
   }
 };
 
-export const followUserController = async (req: Request, res: Response) => {
+export const followUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
-    const currentUserId = (req as AuthenticatedRequest).user._id;
-
-    console.log("--- FOLLOW REQUEST ---");
-    console.log("Target User ID (из URL):", id);
-    console.log("Current User ID (из токена):", currentUserId);
+    const currentUserId = (req as AuthenticatedRequest).user._id.toString();
 
     await usersService.followUser(id, currentUserId);
 
     res.status(200).json({ message: "Подписка оформлена" });
-  } catch (error: any) {
-    console.error("Ошибка в followUserController:", error.message);
-    const status = error.message === "Нельзя подписаться на себя" ? 400 : 404;
-    res.status(status).json({ message: error.message });
+  } catch (error) {
+    next(error);
   }
 };
 
-export const unfollowUserController = async (req: Request, res: Response) => {
+export const unfollowUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const { id } = req.params;
-
-    const currentUserId = (req as AuthenticatedRequest).user._id;
+    const currentUserId = (req as AuthenticatedRequest).user._id.toString();
 
     await usersService.unfollowUser(id, currentUserId);
 
-    console.log("✅ Отписка прошла успешно");
     res.status(200).json({ message: "Отписка выполнена" });
-  } catch (error: any) {
-    res.status(500).json({
-      message: error.message || "Server Error",
-      stack: error.stack,
-    });
+  } catch (error) {
+    next(error);
   }
 };

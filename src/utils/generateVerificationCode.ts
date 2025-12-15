@@ -1,12 +1,18 @@
+// export const generateVerificationCode = (): string => {
+//   const length = 40;
+//   const chars =
+//     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+//   let code = "";
+
+//   for (let i = 0; i < length; i++) {
+//     code += chars.charAt(Math.floor(Math.random() * chars.length));
+//   }
+
+//   return code;
+// };
+
+import crypto from "crypto";
+
 export const generateVerificationCode = (): string => {
-  const length = 40;
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let code = "";
-
-  for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-
-  return code;
+  return crypto.randomBytes(32).toString("hex");
 };
